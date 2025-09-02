@@ -1,9 +1,10 @@
 (function () {
     if (document.getElementById("auto-approve-btn")) return;
 
+    // 建立一鍵拒絕按鈕
     let btn = document.createElement("button");
     btn.id = "auto-approve-btn";
-    btn.innerText = "✅ 一鍵通過";
+    btn.innerText = "✅ 一鍵發佈";
     btn.style.position = "fixed";
     btn.style.top = "80px";
     btn.style.right = "180px";
@@ -19,33 +20,37 @@
     document.body.appendChild(btn);
 
     btn.addEventListener("click", async () => {
-        console.log("🚀 開始自動通過...");
+        console.log("🚀 開始自動發佈...");
 
-        // 自動往下捲，載入更多潛在垃圾訊息
-        for (let j = 0; j < 10; j++) {
-            window.scrollBy(0, 2000);
-            await new Promise(r => setTimeout(r, 2000));
-        }
+        let totalDenied = 0;
 
-        // 找到所有「發佈」按鈕
-        let buttons = Array.from(document.querySelectorAll('div[role="button"], span'))
-            .filter(btn => (btn.innerText || btn.textContent || "").trim() === "發佈");
+        async function clickNext() {
+            while (true) {
+                // 抓取目前所有「發佈」按鈕
+                let buttons = Array.from(document.querySelectorAll('div[role="button"], span, button'))
+                    .filter(b => (b.innerText || b.textContent || "").trim() === "發佈");
 
-        console.log("✅ 找到待審核按鈕數量:", buttons.length);
+                console.log("找到按鈕列表:", buttons.map(b => b.innerText));
 
-        let i = 0;
-        function clickNext() {
-            if (i < buttons.length) {
-                buttons[i].click();
-                console.log("👉 已通過:", buttons[i].innerText);
-                i++;
-                setTimeout(clickNext, 1200);
-            } else {
-                console.log("🎉 全部完成");
-                alert("✅ 已全部通過");
+                if (buttons.length === 0) break;
+
+                // 點擊所有按鈕
+                for (let btn of buttons) {
+                    btn.click();
+                    totalDenied++;
+                    console.log("👉 已發佈:", btn.innerText, "| 已發佈總數:", totalDenied);
+                    await new Promise(r => setTimeout(r, 800)); // 等待 DOM 更新
+                }
+
+                // 滾動頁面以載入更多按鈕
+                window.scrollBy(0, 1500);
+                await new Promise(r => setTimeout(r, 1500));
             }
+
+            console.log("🎉 全部完成，總共發佈:", totalDenied);
+            alert(`✅ 已全部發佈，共 ${totalDenied} 個`);
         }
 
-        clickNext();
+        await clickNext();
     });
 })();
